@@ -1,0 +1,27 @@
+{% extends "flask_user/_auth_base.html" %}
+{% block title %}Inscription{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Créer un compte</h1>
+<p class="text-body-secondary mb-4">Déjà inscrit ? <a href="{{ url_for('user.login') }}">Connectez-vous</a>.</p>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  {% set fields = [
+      (form.username, "Nom d'utilisateur", 'username', "Lettres, chiffres, « - », « . » ou « _ » (3 caractères min.)."),
+      (form.email, 'Adresse e-mail', 'email', None),
+      (form.password, 'Mot de passe', 'new-password', "6 caractères minimum, avec une minuscule, une majuscule et un chiffre."),
+      (form.retype_password, 'Confirmer le mot de passe', 'new-password', None),
+  ] %}
+  {% for f, label, ac, help in fields if f %}
+  <div class="mb-3">
+    <label for="{{ f.id }}" class="form-label">{{ label }} <span class="text-danger" aria-hidden="true">*</span></label>
+    {{ f(class_='form-control' ~ (' is-invalid' if f.errors else ''), autocomplete=ac, required=true,
+         type=('email' if ac == 'email' else none),
+         **{'aria-describedby': (f.id ~ '-help ' if help else '') ~ f.id ~ '-err'}) }}
+    {% if help %}<div class="form-text" id="{{ f.id }}-help">{{ help }}</div>{% endif %}
+    {% for e in f.errors %}<div class="invalid-feedback d-block" id="{{ f.id }}-err">{{ e | fr }}</div>{% endfor %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-accent w-100 btn-lg mt-2">Créer mon compte</button>
+  <p class="small text-body-secondary mt-3 mb-0">Les nouveaux comptes reçoivent le rôle « membre ».</p>
+</form>
+{% endblock %}

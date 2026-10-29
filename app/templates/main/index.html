@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_macros.html" import book_card %}
+{% block title %}Accueil{% endblock %}
+
+{% block main %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="eyebrow">Bibliothèque numérique</span>
+        <h1 class="hero-title">Empruntez, suivez et gérez vos lectures en quelques clics.</h1>
+        <p class="hero-lead">Consultez le catalogue, réservez un exemplaire disponible et suivez vos dates de retour.
+          Les bibliothécaires disposent d'un tableau de bord et d'une interface d'administration complète.</p>
+        <form class="hero-search" action="{{ url_for('main.catalogue') }}" method="get" role="search">
+          <label for="hero-q" class="visually-hidden">Rechercher un livre</label>
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input id="hero-q" name="q" type="search" class="form-control" placeholder="Titre, auteur ou ISBN…">
+          <button class="btn btn-accent" type="submit">Rechercher</button>
+        </form>
+        {% if not current_user.is_authenticated %}
+        <p class="mt-3 small text-body-secondary">Pas encore inscrit ? <a href="{{ url_for('user.register') }}">Créez un compte membre</a> en 30 secondes.</p>
+        {% endif %}
+      </div>
+      <div class="col-lg-5">
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-value">{{ counts.books }}</span><span class="stat-label">titres au catalogue</span></div>
+          <div class="stat"><span class="stat-value">{{ counts.categories }}</span><span class="stat-label">catégories</span></div>
+          <div class="stat"><span class="stat-value">{{ counts.loans }}</span><span class="stat-label">emprunts enregistrés</span></div>
+          <div class="stat"><span class="stat-value">14 j</span><span class="stat-label">durée d'un emprunt</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container py-5">
+  <section aria-labelledby="cats-title" class="mb-5">
+    <h2 id="cats-title" class="section-title">Parcourir par catégorie</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {% for c in categories %}
+        <a class="chip" style="--cat: {{ c.color }}" href="{{ url_for('main.catalogue', categorie=c.id) }}">
+          <span class="chip-dot" aria-hidden="true"></span>{{ c.name }} <span class="chip-count">{{ c.books|length }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section aria-labelledby="new-title">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <h2 id="new-title" class="section-title mb-0">Nouveautés</h2>
+      <a href="{{ url_for('main.catalogue') }}" class="link-arrow">Tout le catalogue <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
+      {% for book in latest %}
+        <div class="col">{{ book_card(book) }}</div>
+      {% else %}
+        <p class="text-body-secondary">Aucun livre pour le moment.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}

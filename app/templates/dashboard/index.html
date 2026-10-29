@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "_macros.html" import loan_status %}
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+{% set k = stats.kpis %}
+<div class="page-head">
+  <div>
+    <h1>Tableau de bord</h1>
+    <p class="text-body-secondary mb-0">Activité de la bibliothèque · mis à jour le {{ stats.generated_at[:16] | replace('T', ' à ') }} (UTC)</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin.index') }}"><i class="bi bi-gear" aria-hidden="true"></i> Administration</a>
+    <a class="btn btn-accent" href="{{ url_for('main.book_new') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Nouveau livre</a>
+  </div>
+</div>
+
+<section class="kpi-grid" aria-label="Indicateurs clés">
+  <div class="kpi"><span class="kpi-icon"><i class="bi bi-book" aria-hidden="true"></i></span>
+    <span class="kpi-label">Titres</span><span class="kpi-value">{{ k.books }}</span>
+    <span class="kpi-sub">{{ k.copies }} exemplaires</span></div>
+  <div class="kpi"><span class="kpi-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+    <span class="kpi-label">Membres</span><span class="kpi-value">{{ k.members }}</span>
+    <span class="kpi-sub">+{{ k.new_members_30d }} sur 30 jours</span></div>
+  <div class="kpi"><span class="kpi-icon kpi-blue"><i class="bi bi-clock" aria-hidden="true"></i></span>
+    <span class="kpi-label">Emprunts actifs</span><span class="kpi-value">{{ k.active_loans }}</span>
+    <span class="kpi-sub">occupation {{ k.occupancy_rate }} %</span></div>
+  <div class="kpi {{ 'kpi-alert' if k.overdue_loans }}"><span class="kpi-icon kpi-red"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+    <span class="kpi-label">En retard</span><span class="kpi-value">{{ k.overdue_loans }}</span>
+    <span class="kpi-sub"><a href="{{ url_for('dashboard.index', etat='en_retard') }}#etats">voir la liste</a></span></div>
+  <div class="kpi"><span class="kpi-icon kpi-green"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+    <span class="kpi-label">Retours à temps</span><span class="kpi-value">{{ k.on_time_rate }} %</span>
+    <span class="kpi-sub">{{ k.returned_loans }} retours</span></div>
+</section>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-8">
+    <section class="card-panel h-100" aria-labelledby="c1">
+      <h2 id="c1" class="h6">Emprunts et retours par mois</h2>
+      <div class="chart-box"><canvas id="chart-months" role="img" aria-label="Courbe des emprunts et retours par mois"></canvas></div>
+    </section>
+  </div>
+  <div class="col-lg-4">
+    <section class="card-panel h-100" aria-labelledby="c2">
+      <h2 id="c2" class="h6">États des emprunts</h2>
+      <div class="chart-box chart-box-sm"><canvas id="chart-status" role="img" aria-label="Répartition des emprunts par état"></canvas></div>
+      <ul class="legend-list" aria-label="Valeurs">
+        <li><span class="dot dot-blue"></span>En cours <strong>{{ stats.loans_by_status.en_cours }}</strong></li>
+        <li><span class="dot dot-red"></span>En retard <strong>{{ stats.loans_by_status.en_retard }}</strong></li>
+        <li><span class="dot dot-green"></span>Rendus <strong>{{ stats.loans_by_status.rendu }}</strong></li>
+      </ul>
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="card-panel h-100" aria-labelledby="c3">
+      <h2 id="c3" class="h6">Livres et emprunts par catégorie</h2>
+      <div class="chart-box"><canvas id="chart-categories" role="img" aria-label="Nombre de livres et d'emprunts par catégorie"></canvas></div>
+    </section>
+  </div>
+  <div class="col-lg-5">
+    <section class="card-panel h-100" aria-labelledby="c4">
+      <h2 id="c4" class="h6">Top 5 des livres les plus empruntés</h2>
+      <ol class="top-list">
+        {% set max_loans = (stats.top_books[0].loans if stats.top_books else 1) %}
+        {% for b in stats.top_books %}
+          <li>
+            <div class="d-flex justify-content-between gap-2">
+              <a href="{{ url_for('main.book_detail', book_id=b.id) }}" class="text-truncate">{{ b.title }}</a>
+              <span class="mono small">{{ b.loans }}</span>
+            </div>
+            <div class="bar" aria-hidden="true"><span style="width: {{ (b.loans * 100 / max_loans) | round(0) }}%"></span></div>
+          </li>
+        {% else %}
+          <li class="text-body-secondary">Aucun emprunt.</li>
+        {% endfor %}
+      </ol>
+      <h3 class="h6 mt-4">Comptes par rôle</h3>
+      <div class="d-flex flex-wrap gap-2">
+        {% for r in stats.roles %}<span class="chip chip-static">{{ r.name }} <span class="chip-count">{{ r.count }}</span></span>{% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<section id="etats" class="card-panel mt-4" aria-labelledby="states-title">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 id="states-title" class="h6 mb-0">État des emprunts <span class="text-body-secondary fw-normal">({{ loans|length }})</span></h2>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Filtrer par état">
+      <a class="btn btn-outline-secondary {{ 'active' if not status }}" href="{{ url_for('dashboard.index') }}#etats">Tous</a>
+      {% for key, label in labels.items() %}
+        <a class="btn btn-outline-secondary {{ 'active' if status == key }}" href="{{ url_for('dashboard.index', etat=key) }}#etats">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th scope="col">Livre</th><th scope="col">Membre</th><th scope="col">Emprunté</th><th scope="col">Retour prévu</th><th scope="col">État</th></tr></thead>
+      <tbody>
+        {% for l in loans %}
+        <tr>
+          <td><a href="{{ url_for('main.book_detail', book_id=l.book.id) }}">{{ l.book.title }}</a></td>
+          <td>{{ l.user.full_name }}<div class="small text-body-secondary">{{ l.user.email }}</div></td>
+          <td class="mono small">{{ l.borrowed_at | date_fr }}</td>
+          <td class="mono small">{{ l.due_at | date_fr }}</td>
+          <td>{{ loan_status(l) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-body-secondary py-4">Aucun emprunt dans cet état.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script nonce="{{ csp_nonce }}">window.STATS = {{ stats | tojson }};</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

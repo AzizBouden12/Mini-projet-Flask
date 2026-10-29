@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Fichier trop volumineux{% endblock %}
+{% block content %}
+<div class="empty-state error-page">
+  <i class="bi bi-file-earmark-x" aria-hidden="true"></i>
+  <p class="error-code mono">413</p>
+  <h1>Fichier trop volumineux</h1>
+  <p>La taille maximale autorisée pour un téléversement est de 5 Mo.</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a class="btn btn-primary" href="{{ url_for('main.index') }}">Retour à l'accueil</a>
+    {% if not current_user.is_authenticated %}<a class="btn btn-outline-secondary" href="{{ url_for('user.login') }}">Se connecter</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

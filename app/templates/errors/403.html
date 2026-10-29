@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé{% endblock %}
+{% block content %}
+<div class="empty-state error-page">
+  <i class="bi bi-shield-x" aria-hidden="true"></i>
+  <p class="error-code mono">403</p>
+  <h1>Accès refusé</h1>
+  <p>Vous n'avez pas les droits nécessaires pour consulter cette page.</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a class="btn btn-primary" href="{{ url_for('main.index') }}">Retour à l'accueil</a>
+    {% if not current_user.is_authenticated %}<a class="btn btn-outline-secondary" href="{{ url_for('user.login') }}">Se connecter</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

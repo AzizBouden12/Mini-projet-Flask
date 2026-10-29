@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cover, availability %}
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Fil d'Ariane">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('main.catalogue') }}">Catalogue</a></li>
+    {% if book.category %}<li class="breadcrumb-item"><a href="{{ url_for('main.catalogue', categorie=book.category_id) }}">{{ book.category.name }}</a></li>{% endif %}
+    <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4 g-lg-5">
+  <div class="col-md-4 col-lg-3">
+    {{ cover(book, 'lg') }}
+  </div>
+  <div class="col-md-8 col-lg-9">
+    {% if book.category %}<span class="cat-dot" style="--cat: {{ book.category.color }}">{{ book.category.name }}</span>{% endif %}
+    <h1 class="book-title">{{ book.title }}</h1>
+    <p class="book-author">{{ book.author }}</p>
+
+    <dl class="meta-grid">
+      <div><dt>Parution</dt><dd>{{ book.year or '—' }}</dd></div>
+      <div><dt>ISBN</dt><dd class="mono">{{ book.isbn or '—' }}</dd></div>
+      <div><dt>Exemplaires</dt><dd>{{ book.copies }}</dd></div>
+      <div><dt>Disponibilité</dt><dd>{{ availability(book) }}</dd></div>
+    </dl>
+
+    {% if book.summary %}<p class="book-summary">{{ book.summary }}</p>{% endif %}
+
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      {% if current_user.is_authenticated %}
+        {% if already %}
+          <button class="btn btn-outline-primary btn-lg" disabled aria-disabled="true"><i class="bi bi-bookmark-check" aria-hidden="true"></i> Déjà emprunté</button>
+        {% elif book.available > 0 %}
+          <form method="post" action="{{ url_for('main.borrow', book_id=book.id) }}">
+            {{ form.hidden_tag() }}
+            <button class="btn btn-accent btn-lg" type="submit"><i class="bi bi-bookmark-plus" aria-hidden="true"></i> Emprunter ce livre</button>
+          </form>
+        {% else %}
+          <button class="btn btn-secondary btn-lg" disabled aria-disabled="true">Aucun exemplaire disponible</button>
+        {% endif %}
+      {% else %}
+        <a class="btn btn-accent btn-lg" href="{{ url_for('user.login', next=request.path) }}"><i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Se connecter pour emprunter</a>
+      {% endif %}
+    </div>
+
+    {% if current_user.is_authenticated and current_user.is_staff %}
+    <div class="staff-box mt-4">
+      <span class="staff-box-label"><i class="bi bi-person-badge" aria-hidden="true"></i> Espace bibliothécaire</span>
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.book_edit', book_id=book.id) }}"><i class="bi bi-pencil" aria-hidden="true"></i> Modifier / téléverser</a>
+        <form method="post" action="{{ url_for('main.book_delete', book_id=book.id) }}" data-confirm="Supprimer définitivement « {{ book.title }} » ?">
+          {{ form.hidden_tag() }}
+          <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash" aria-hidden="true"></i> Supprimer</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

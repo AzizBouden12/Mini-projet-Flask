@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block main %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <a href="{{ url_for('main.index') }}" class="auth-logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="40" height="40"> Biblio<strong>Flask</strong></a>
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

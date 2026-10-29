@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_macros.html" import book_card, pager %}
+{% block title %}Catalogue{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Catalogue</h1>
+    <p class="text-body-secondary mb-0">
+      {{ pagination.total | plural('livre') }}{% if q %} pour « {{ q }} »{% endif %}
+    </p>
+  </div>
+  {% if current_user.is_authenticated and current_user.is_staff %}
+    <a class="btn btn-accent" href="{{ url_for('main.book_new') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Ajouter un livre</a>
+  {% endif %}
+</div>
+
+<form class="filters" method="get" role="search" aria-label="Filtrer le catalogue">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-6">
+      <label for="q" class="form-label">Recherche</label>
+      <input id="q" name="q" type="search" class="form-control" value="{{ q }}" placeholder="Titre, auteur, ISBN…">
+    </div>
+    <div class="col-8 col-md-4">
+      <label for="categorie" class="form-label">Catégorie</label>
+      <select id="categorie" name="categorie" class="form-select">
+        <option value="">Toutes</option>
+        {% for c in categories %}<option value="{{ c.id }}" {{ 'selected' if c.id == category_id }}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-4 col-md-2">
+      <button class="btn btn-primary w-100" type="submit">Filtrer</button>
+    </div>
+  </div>
+</form>
+
+{% if books %}
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
+    {% for book in books %}<div class="col">{{ book_card(book) }}</div>{% endfor %}
+  </div>
+  {{ pager(pagination, 'main.catalogue', q=q, categorie=category_id) }}
+{% else %}
+  <div class="empty-state">
+    <i class="bi bi-journal-x" aria-hidden="true"></i>
+    <h2>Aucun résultat</h2>
+    <p>Essayez un autre mot-clé ou une autre catégorie.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.catalogue') }}">Voir tout le catalogue</a>
+  </div>
+{% endif %}
+{% endblock %}

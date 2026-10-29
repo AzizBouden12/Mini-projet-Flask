@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Accueil{% endblock %} · {{ app_name }}</title>
+  <meta name="description" content="BiblioFlask — gestion de bibliothèque en ligne développée avec Flask.">
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+
+{% set endpoint = request.endpoint or '' %}
+<nav class="navbar navbar-expand-xl app-nav sticky-top" aria-label="Navigation principale">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.index') }}">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="32" height="32">
+      <span>Biblio<strong>Flask</strong></span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
+            aria-controls="nav" aria-expanded="false" aria-label="Ouvrir le menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link {{ 'active' if endpoint == 'main.index' }}" href="{{ url_for('main.index') }}" {% if endpoint == 'main.index' %}aria-current="page"{% endif %}>Accueil</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if endpoint.startswith('main.catalogue') or endpoint == 'main.book_detail' }}" href="{{ url_for('main.catalogue') }}">Catalogue</a></li>
+        {% if current_user.is_authenticated and current_user.is_staff %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if endpoint.startswith('dashboard.') }}" href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.index') }}">Administration</a></li>
+        {% endif %}
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        {% if current_user.is_authenticated %}
+          <div class="dropdown">
+            <button class="btn user-chip dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar avatar-sm" aria-hidden="true">{{ current_user.initials }}</span>
+              <span class="d-none d-md-inline">{{ current_user.first_name or current_user.username }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li class="dropdown-header">{{ current_user.email }}<br>
+                {% for r in current_user.roles %}<span class="badge role-badge role-{{ r.name }}">{{ r }}</span> {% endfor %}
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('user.change_password') }}"><i class="bi bi-key" aria-hidden="true"></i> Mot de passe</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{{ url_for('user.logout') }}"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> Déconnexion</a></li>
+            </ul>
+          </div>
+        {% else %}
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('user.login') }}">Connexion</a>
+          <a class="btn btn-accent btn-sm" href="{{ url_for('user.register') }}">S'inscrire</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main id="contenu" tabindex="-1">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3" role="status" aria-live="polite">
+      {% for category, message in messages %}
+        {% set cat = 'danger' if category == 'error' else ('info' if category == 'message' else category) %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+          <i class="bi {{ {'success':'bi-check-circle','danger':'bi-exclamation-octagon','warning':'bi-exclamation-triangle'}.get(cat, 'bi-info-circle') }} mt-1" aria-hidden="true"></i>
+          <div>{{ message | fr }}</div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block main %}
+  <div class="container py-4">
+    {% block content %}{% endblock %}
+  </div>
+  {% endblock %}
+</main>
+
+<footer class="app-footer">
+  <div class="container">
+    <span>&copy; {{ now.year }} BiblioFlask · Mini-projet « Programmation Web avec Python » · INGTA2</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

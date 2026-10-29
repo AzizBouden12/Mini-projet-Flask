@@ -1,0 +1,80 @@
+{% macro cover(book, size='md') -%}
+  {% if book.cover_url %}
+    <img class="cover cover-{{ size }}" src="{{ book.cover_url }}" alt="Couverture de {{ book.title }}" loading="lazy">
+  {% else %}
+    <div class="cover cover-{{ size }} cover-generated" style="--cat: {{ book.category.color if book.category else '#334155' }}" aria-hidden="true">
+      <span class="cover-title">{{ book.title }}</span>
+      <span class="cover-author">{{ book.author }}</span>
+    </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro availability(book) -%}
+  {% if book.available > 0 %}
+    <span class="badge state state-ok"><i class="bi bi-check2-circle" aria-hidden="true"></i> {{ book.available }}/{{ book.copies }} disponible{{ 's' if book.available > 1 }}</span>
+  {% else %}
+    <span class="badge state state-off"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Indisponible</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro book_card(book) -%}
+  <article class="book-card h-100">
+    <a href="{{ url_for('main.book_detail', book_id=book.id) }}" class="stretched-link" aria-label="{{ book.title }} — {{ book.author }}"></a>
+    {{ cover(book) }}
+    <div class="book-card-body">
+      {% if book.category %}<span class="cat-dot" style="--cat: {{ book.category.color }}">{{ book.category.name }}</span>{% endif %}
+      <h3 class="book-card-title">{{ book.title }}</h3>
+      <p class="book-card-author">{{ book.author }}{% if book.year %} · {{ book.year }}{% endif %}</p>
+      {{ availability(book) }}
+    </div>
+  </article>
+{%- endmacro %}
+
+{% macro loan_status(loan) -%}
+  {% set icons = {'en_cours': 'bi-clock', 'en_retard': 'bi-exclamation-triangle', 'rendu': 'bi-check2'} %}
+  <span class="badge state state-{{ loan.status }}"><i class="bi {{ icons[loan.status] }}" aria-hidden="true"></i> {{ loan.status_label }}</span>
+{%- endmacro %}
+
+{% macro field(f, help=None, required=False) -%}
+  <div class="mb-3">
+    {% if f.type == 'BooleanField' %}
+      <div class="form-check">
+        {{ f(class_='form-check-input') }}
+        {{ f.label(class_='form-check-label') }}
+      </div>
+    {% else %}
+      <label for="{{ f.id }}" class="form-label">{{ f.label.text }}{% if required %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+      {% set cls = 'form-control' if f.type not in ('SelectField',) else 'form-select' %}
+      {% set described = (f.id ~ '-help ' if help else '') ~ (f.id ~ '-err' if f.errors else '') %}
+      {{ f(class_=cls ~ (' is-invalid' if f.errors else ''), **({'aria-describedby': described.strip(), 'aria-invalid': 'true' if f.errors else 'false'})) }}
+      {% if help %}<div class="form-text" id="{{ f.id }}-help">{{ help }}</div>{% endif %}
+      {% if f.errors %}
+        <div class="invalid-feedback d-block" id="{{ f.id }}-err">{% for e in f.errors %}{{ e | fr }} {% endfor %}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{% macro pager(pagination, endpoint) -%}
+  {% if pagination and pagination.pages > 1 %}
+  <nav aria-label="Pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+        <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, **kwargs) if pagination.has_prev else '#' }}" aria-label="Page précédente">&laquo;</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+        {% if p %}
+          <li class="page-item {{ 'active' if p == pagination.page }}">
+            <a class="page-link" href="{{ url_for(endpoint, page=p, **kwargs) }}" {% if p == pagination.page %}aria-current="page"{% endif %}>{{ p }}</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+        <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, **kwargs) if pagination.has_next else '#' }}" aria-label="Page suivante">&raquo;</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+{%- endmacro %}

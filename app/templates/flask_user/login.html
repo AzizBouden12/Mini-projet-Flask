@@ -1,0 +1,29 @@
+{% extends "flask_user/_auth_base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Connexion</h1>
+<p class="text-body-secondary mb-4">Heureux de vous revoir. Pas de compte ? <a href="{{ url_for('user.register') }}">Inscrivez-vous</a>.</p>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  {% set f = form.username if user_manager.USER_ENABLE_USERNAME else form.email %}
+  {% set f_label = "Nom d'utilisateur ou e-mail" %}
+  <div class="mb-3">
+    <label for="{{ f.id }}" class="form-label">{{ f_label }}</label>
+    {{ f(class_='form-control' ~ (' is-invalid' if f.errors else ''), autocomplete='username', autofocus=true, **{'aria-describedby': f.id ~ '-err'}) }}
+    {% for e in f.errors %}<div class="invalid-feedback d-block" id="{{ f.id }}-err">{{ e | fr }}</div>{% endfor %}
+  </div>
+  <div class="mb-3">
+    <label for="{{ form.password.id }}" class="form-label">Mot de passe</label>
+    {{ form.password(class_='form-control' ~ (' is-invalid' if form.password.errors else ''), autocomplete='current-password', **{'aria-describedby': 'pwd-err'}) }}
+    {% for e in form.password.errors %}<div class="invalid-feedback d-block" id="pwd-err">{{ e | fr }}</div>{% endfor %}
+  </div>
+  {% if user_manager.USER_ENABLE_REMEMBER_ME %}
+  <div class="form-check mb-4">
+    {{ form.remember_me(class_='form-check-input') }}
+    <label class="form-check-label" for="{{ form.remember_me.id }}">Se souvenir de moi (7 jours)</label>
+  </div>
+  {% endif %}
+  <button type="submit" class="btn btn-accent w-100 btn-lg">Se connecter</button>
+</form>
+{% endblock %}
